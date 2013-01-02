@@ -235,12 +235,14 @@ var Game = function(physics)
 					}
 				}
 			}
+			if(closest)
+			{
+				var pos = closest.GetWorldCenter();
 			
-			var pos = closest.GetWorldCenter();
-		
-			var bomb = 
-				  new Body(physics, { color: "red", type: "dynamic", IsBullet: true, x: pos.x, y:pos.y+1, height: 1, width: 0.25 });	
-			bomb.invaderType = BOMB;
+				var bomb = 
+					  new Body(physics, { color: "red", type: "dynamic", IsBullet: true, x: pos.x, y:pos.y+1, height: 1, width: 0.25 });	
+				bomb.invaderType = BOMB;
+			}
 			this.lastBombed = new Date().getTime();
 		}
 	}
