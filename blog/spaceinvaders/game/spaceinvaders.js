@@ -1,5 +1,19 @@
 var Game = function(physics)
 {
+	var b2Vec2 = Box2D.Common.Math.b2Vec2;
+	var types = {	
+		INVADER : 0,
+		PLAYER : 1,
+		BULLET : 2,
+		SHRAPNEL : 3,
+		GROUND : 4,
+		STATIC : 5,
+		FORMATION : 6,
+		BOMB : 7
+	}
+	
+	var self = this;
+
 	this.physics = physics;
 	
 	this.invaders = [];
@@ -19,55 +33,42 @@ var Game = function(physics)
 	this.spaceDown = false;
 	this.lastFired =  new Date().getTime();
 	this.lastBombed = new Date().getTime();
-};
-
-(function() {
-	var b2Vec2 = Box2D.Common.Math.b2Vec2;
-	INVADER = 0;
-	PLAYER = 1;
-	BULLET = 2;
-	SHRAPNEL = 3;
-	GROUND = 4;
-	STATIC = 5;
-	FORMATION = 6;
-	BOMB = 7;
 	
-	var game;
 
-	Game.prototype.handleBulletCollision = function(bullet, other)
+	this.handleBulletCollision = function(bullet, other)
 	{
-		if(other.invaderType == INVADER)
+		if(other.invaderType == types.INVADER)
 		{
 			this.explodeBodies.push(other);
 			this.score += 100;
 		}
-		else if(other.invaderType == SHRAPNEL)
+		else if(other.invaderType == types.SHRAPNEL)
 		{
 			this.garbageBodies.push(other);
 			this.score += 5;
 		}
 		this.garbageBodies.push(bullet);
-	}
+	};
 	
-	Game.prototype.handlePlayerCollision = function(player, other)
+	this.handlePlayerCollision = function(player, other)
 	{
-		if(other.invaderType == INVADER)
+		if(other.invaderType == types.INVADER)
 		{
 			this.explodeBodies.push(other);
 			this.score -= 100;
 			this.lives--;
 			this.explodeBodies.push(player);
 		}		
-	}
+	};
 	
-	Game.prototype.handleBombCollision = function(bomb, other)
+	this.handleBombCollision = function(bomb, other)
 	{
 		if(!bomb.exploded)
 		{
-			if(other.invaderType != INVADER)
+			if(other.invaderType != types.INVADER)
 			{
 				this.explodeBodies.push(bomb);
-				if(other.invaderType == PLAYER)
+				if(other.invaderType == types.PLAYER)
 				{
 					this.lives--;
 					this.explodeBodies.push(other);
@@ -75,45 +76,40 @@ var Game = function(physics)
 				bomb.exploded = true;
 			}
 		}
-	}
+	};
 
-  Game.prototype.collision = function() {
-    this.listener = new Box2D.Dynamics.b2ContactListener();
-    this.listener.PostSolve = function(contact,impulse) {
-	
-      var bodyA = contact.GetFixtureA().GetBody().GetUserData(),
-          bodyB = contact.GetFixtureB().GetBody().GetUserData();
-		  
-		  if(bodyA.invaderType == BULLET)
-		  {
-			game.handleBulletCollision(bodyA, bodyB);
-		  }
-		  else if(bodyB.invaderType == BULLET)
-		  {
-			game.handleBulletCollision(bodyB, bodyA);
-		  }
-		  else if(bodyA.invaderType == BOMB)
-		  {
-			game.handleBombCollision(bodyA, bodyB);
-		  }
-		  else if(bodyB.invaderType == BOMB)
-		  {
-			game.handleBombCollision(bodyB, bodyA);
-		  }
-		  else if(bodyA.invaderType == PLAYER)
-		  {
-			game.handlePlayerCollision(bodyA, bodyB);
-		  }
-		  else if(bodyB.invaderType == PLAYER)
-		  {
-			game.handlePlayerCollision(bodyB, bodyA);
-		  }
-		  
-    };
-    this.physics.world.SetContactListener(this.listener);
-  };
+	function collision(contact,impulse) 
+	{
+		var bodyA = contact.GetFixtureA().GetBody().GetUserData();
+		var bodyB = contact.GetFixtureB().GetBody().GetUserData();
+			  
+		if(bodyA.invaderType == types.BULLET)
+		{
+			self.handleBulletCollision(bodyA, bodyB);
+		}
+		else if(bodyB.invaderType == types.BULLET)
+		{
+			self.handleBulletCollision(bodyB, bodyA);
+		}
+		else if(bodyA.invaderType == types.BOMB)
+		{
+			self.handleBombCollision(bodyA, bodyB);
+		}
+		else if(bodyB.invaderType == types.BOMB)
+		{
+			self.handleBombCollision(bodyB, bodyA);
+		}
+		else if(bodyA.invaderType == types.PLAYER)
+		{
+			self.handlePlayerCollision(bodyA, bodyB);
+		}
+		else if(bodyB.invaderType == types.PLAYER)
+		{
+			self.handlePlayerCollision(bodyB, bodyA);
+		}
+	};
   
-	Game.prototype.destroyBody = function(body)
+	this.destroyBody = function(body)
 	{
 		if(body.joint != null)
 		{
@@ -125,9 +121,9 @@ var Game = function(physics)
 			this.physics.world.DestroyBody(body.body);
 			body.body = null;
 		}
-	}
+	};
 	
-	Game.prototype.cleanup = function()
+	this.cleanup = function()
 	{
 		for(var i = 0; i < this.garbageBodies.length; i++)
 		{
@@ -150,21 +146,21 @@ var Game = function(physics)
 				var shrapnelForceX = 1;
 				var shrapnelForceY = 1;
 				var color = "white";
-				if(body.invaderType == INVADER)
+				if(body.invaderType == types.INVADER)
 				{
 					shrapnelCount = 30;
 					shrapnelForceX = 40;
 					shrapnelForceY = 0;
 					color = "white";
 				}
-				else if(body.invaderType == BOMB)
+				else if(body.invaderType == types.BOMB)
 				{
 					shrapnelCount = 5;
 					shrapnelForceX = 100;
 					shrapnelForceY = 100;
 					color = "red";
 				}
-				else if(body.invaderType == PLAYER)
+				else if(body.invaderType == types.PLAYER)
 				{
 					shrapnelCount = 10;
 					shrapnelForceX = 200;
@@ -178,22 +174,22 @@ var Game = function(physics)
 					var x = (Math.cos(angle) * radius);
 					var y = (Math.sin(angle) * radius)
 					var shrapnelObject = new Body(window.physics, { 'color': color, x: pos.x+x, y: pos.y+y, height: 0.5,  width: 0.5 });
-					shrapnelObject.invaderType = SHRAPNEL;
+					shrapnelObject.invaderType = this.SHRAPNEL;
 					shrapnelObject.body.ApplyImpulse({'x': x * shrapnelForceX * Math.random(), 'y': x * shrapnelForceY * Math.random()}, shrapnelObject.body.GetWorldCenter());
 					this.shrapnel.push(shrapnelObject);
 				}			
-				if(body.invaderType != PLAYER)
+				if(body.invaderType != types.PLAYER)
 				{
 					this.destroyBody(body);
 				}
 			}
 		}
 		this.explodeBodies = [];	
-	}
+	};
 	
-	Game.prototype.moveInvaders = function(dt)
+	this.moveInvaders = function(dt)
 	{
-		var joint = game.invaderFormation.joint;
+		var joint = this.invaderFormation.joint;
 		var pos = joint.GetTarget();
 		var down = 0;
 		if(this.formationDelta < -3)
@@ -208,9 +204,9 @@ var Game = function(physics)
 		}
 		this.formationDelta += (dt/this.formationDirection);
 		joint.SetTarget(new b2Vec2(pos.x + (dt/this.formationDirection), pos.y + down));
-	}
+	};
 	
-	Game.prototype.dropBomb = function()
+	this.dropBomb = function()
 	{
 		var dBomb = ((new Date().getTime()) - this.lastBombed) / 1000;
 		
@@ -230,7 +226,7 @@ var Game = function(physics)
 					var d = x * x + y * y;
 					if(d < dist)
 					{
-					dist = d;
+						dist = d;
 						closest = body;
 					}
 				}
@@ -239,22 +235,22 @@ var Game = function(physics)
 			{
 				var pos = closest.GetWorldCenter();
 			
-				var bomb = 
-					  new Body(physics, { color: "red", type: "dynamic", IsBullet: true, x: pos.x, y:pos.y+1, height: 1, width: 0.25 });	
-				bomb.invaderType = BOMB;
+				var bomb = new Body(physics, { color: "red", type: "dynamic", IsBullet: true, x: pos.x, y:pos.y+1, height: 1, width: 0.25 });	
+				bomb.invaderType = types.BOMB;
 			}
 			this.lastBombed = new Date().getTime();
 		}
-	}
+	};
 
-  Game.prototype.step = function(dt)
-  {
-	this.cleanup();
-	this.moveInvaders(dt);
-	this.dropBomb();
-	this.handleUserInput(dt);
-  }
-	Game.prototype.draw = function(context)
+	this.step = function(dt)
+	{
+		this.moveInvaders(dt);
+		this.dropBomb();
+		this.handleUserInput(dt);
+		this.cleanup();
+	};
+
+	this.draw = function(context)
 	{
 		context.font="20px Arial";
 		context.fillStyle = "green";
@@ -267,84 +263,77 @@ var Game = function(physics)
 			context.fillStyle = "green";
 			context.fillText("GAME OVER",50,300);
 		}
-	}
+	};
 	
-	Game.prototype.keyDown = function(event)
+	function keyDown(event)
 	{
 		var keyCode = ('which' in event) ? event.which : event.keyCode;
 		if(keyCode == 37)
 		{
-			game.leftDown = true;
+			self.leftDown = true;
 			return false;
 		} 
 		if(keyCode == 39)
 		{
-			game.rightDown = true;
+			self.rightDown = true;
 			return false;
 		} 
 		if(keyCode == 32)		
 		{
-			game.spaceDown = true;
+			self.spaceDown = true;
 			return false;
 		}
 		return true;
-	}
+	};
   
-	Game.prototype.keyUp = function(event)
+	function keyUp(event)
 	{
 		var keyCode = ('which' in event) ? event.which : event.keyCode;
 		if(keyCode == 37)
 		{
-			game.leftDown = false;
+			self.leftDown = false;
 			return false;
 		} 
 		if(keyCode == 39)
 		{
-			game.rightDown = false;
+			self.rightDown = false;
 			return false;
 		} 
 		if(keyCode == 32)		
 		{
-			game.spaceDown = false;
+			self.spaceDown = false;
 			return false;
 		}
 		return true;
-	}
+	};
   
-	Game.prototype.handleUserInput = function(dt)
+	this.handleUserInput = function(dt)
 	{
+		var joint = this.player.joint;
+		var pos = joint.GetTarget();
 		if(this.leftDown)
 		{
-			var joint = game.player.joint;
-			var pos = joint.GetTarget();
 			joint.SetTarget(new b2Vec2(pos.x - dt * 10, pos.y));
 		} 
-		else if(this.rightDown)
+		if(this.rightDown)
 		{
-			var joint = game.player.joint;
-			var pos = joint.GetTarget();
 			joint.SetTarget(new b2Vec2(pos.x + dt * 10, pos.y));
 		} 
 		if(this.spaceDown)
 		{
-			var joint = game.player.joint;
-			var pos = joint.GetTarget();
 			var dFire = ((new Date().getTime()) - this.lastFired) / 1000;
 			
 			if(dFire >= 0.3)
 			{
-				var bullet = 
-				  new Body(physics, { color: "green", type: "dynamic", IsBullet: true, x: pos.x, y:pos.y-2, height: 1, width: 0.25 });	
-				bullet.body.ApplyImpulse({x:0,y:-80}, bullet.body.GetWorldCenter());	bullet.invaderType = BULLET;
+				var bullet = new Body(physics, { color: "green", type: "dynamic", IsBullet: true, x: pos.x, y:pos.y-2, height: 1, width: 0.25 });	
+				bullet.body.ApplyImpulse({x:0,y:-80}, bullet.body.GetWorldCenter());	
+				bullet.invaderType = types.BULLET;
 				this.lastFired = new Date().getTime();
 			}
-			return false;
 		} 
-		
-		return true;
-	}
+	};
 	
-	Game.prototype.createInvader = function(img, xPos, yPos)
+	this.createInvader = function(img, xPos, yPos)
 	{
 		var invader = new Body(window.physics, { image: img, x: xPos, y: yPos, width: 5.56*0.7, height: 4.1*0.7, fixedRotation:true  });
 		
@@ -355,23 +344,17 @@ var Game = function(physics)
 		new b2Vec2(xPos, yPos - 0.2));
 		distJointDef.dampingRatio = 0.05;
 		distJointDef.frequencyHz = 1;
-
 		invader.joint = this.physics.world.CreateJoint(distJointDef);		
-		
-		invader.invaderType = INVADER;
+		invader.invaderType = types.INVADER;
 		this.invaders.push(invader);
- 	}
+ 	};
 	
-	Game.prototype.setup = function()
+	this.setup = function()
 	{
-		var img = new Image();
-		var self = this;
-		game = this;
-		this.collision();
-		
+
 		this.invaderFormation = new Body(physics, { color: false, type: "dynamic", x: 0, y:0, height: 30, width: 80, fixedRotation:true  });
 		this.invaderFormation.body.GetFixtureList().SetSensor(true);
-		this.invaderFormation.invaderType = FORMATION;
+		this.invaderFormation.invaderType = types.FORMATION;
 		var jointDefinition = new Box2D.Dynamics.Joints.b2MouseJointDef();
 		jointDefinition.bodyA = this.physics.world.GetGroundBody();
 		jointDefinition.bodyB = this.invaderFormation.body;
@@ -380,57 +363,38 @@ var Game = function(physics)
 		jointDefinition.timeStep = this.physics.stepAmount;
 		this.invaderFormation.joint = this.physics.world.CreateJoint(jointDefinition);
 
-		this.player = 
-		new Body(this.physics, { color: "green", x: 20, y: 29.5, height: 1,  width: 5 });
+		this.player = new Body(this.physics, { color: "green", x: 20, y: 29.5, height: 1,  width: 5 });
 
 		var jointDefinition = new Box2D.Dynamics.Joints.b2MouseJointDef();
-
 		jointDefinition.bodyA = this.physics.world.GetGroundBody();
 		jointDefinition.bodyB = this.player.body;
 		jointDefinition.target.Set(20,29.5);
 		jointDefinition.maxForce = 100000;
 		jointDefinition.timeStep = this.physics.stepAmount;
 		this.player.joint = this.physics.world.CreateJoint(jointDefinition);
-		this.player.invaderType = PLAYER;
+		this.player.invaderType = types.PLAYER;
 		
 		var floor = new Body(physics, { color: "green", type: "static", x: 0, y:30, height: 0.5, width: 80 });
-		
-		var leftWall = 
-		
-		// Wait for the image to load
+				
+		var img = new Image();
 		img.addEventListener("load", function() {
 
-
-			self.createInvader(img, 5, 8);
-			self.createInvader(img, 10, 8);
-			self.createInvader(img, 15, 8);
-			self.createInvader(img, 20, 8);
-			self.createInvader(img, 25, 8);
-			self.createInvader(img, 30, 8);
-			self.createInvader(img, 35, 8);
-
-			self.createInvader(img, 5, 13);
-			self.createInvader(img, 10, 13);
-			self.createInvader(img, 15, 13);
-			self.createInvader(img, 20, 13);
-			self.createInvader(img, 25, 13);
-			self.createInvader(img, 30, 13);
-			self.createInvader(img, 35, 13);
-
-			self.createInvader(img, 5, 18);
-			self.createInvader(img, 10, 18);
-			self.createInvader(img, 15, 18);
-			self.createInvader(img, 20, 18);
-			self.createInvader(img, 25, 18);
-			self.createInvader(img, 30, 18);
-			self.createInvader(img, 35, 18);
-
+			for(var x = 5; x < 36; x+=5)
+			{
+				for(var y = 8; y < 19; y+=5)
+				{
+					self.createInvader(img, x, y);
+				}
+			}
 			
-			window.addEventListener("keydown", self.keyDown);
-			window.addEventListener("keyup", self.keyUp);
+			window.addEventListener("keydown", keyDown);
+			window.addEventListener("keyup", keyUp);
+			
+			var collisionListener = new Box2D.Dynamics.b2ContactListener();
+			collisionListener.PostSolve = collision;
+			self.physics.world.SetContactListener(collisionListener);
+			
 		});
 		img.src = "images/invader2.jpg";
-	}
-	
- 
-}());
+	};
+};
